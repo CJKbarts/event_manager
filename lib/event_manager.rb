@@ -1,19 +1,30 @@
 require 'csv'
 require 'google/apis/civicinfo_v2'
 require 'erb'
+require 'time'
 
 def clean_zipcode(zipcode)
   zipcode.to_s.rjust(5, '0')[0..4]
 end
 
 def clean_phone_number(phone_number)
+  phone_number = convert_number_format(phone_number)
+
   if phone_number.length == 10
     phone_number
-  elsif phone_number.lenght == 11 && phone_number[0] == 1
+  elsif phone_number.length == 11 && phone_number[0] == "1"
     phone_number[1..10]
   else
     'Invalid phone number entered'
   end
+end
+
+def convert_number_format(number)
+  result = ''
+  number.each_char do |char|
+    result += char if char.match?(/[[:digit:]]/)
+  end
+  result
 end
 
 def legislators_by_zipcode(zip)
