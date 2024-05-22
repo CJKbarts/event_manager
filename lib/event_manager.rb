@@ -52,6 +52,34 @@ def save_thank_you_letter(id, form_letter)
   end
 end
 
+def peak_times(frequency_hash)
+  max_frequency = frequency_hash.values.max
+  result = frequency_hash.reduce([]) do |peak_times, (time, frequency)|
+    peak_times.push(time) if frequency == max_frequency
+    peak_times
+  end
+
+  result
+end
+
+DAY_HASH = {
+  '0': "Sunday",
+  '1': "Monday",
+  '2': "Tuesday",
+  '3': "Wednesday",
+  '4': "Thursday",
+  '5': "Friday",
+  '6': "Saturday"
+}
+
+def convert_to_days(day_nums)
+  result = day_nums.map do |day_num|
+    DAY_HASH[day_num.to_s.to_sym]
+  end
+
+  result.join(", ")
+end
+
 puts 'Event Manager Initialized!'
 
 contents = CSV.open(
@@ -63,6 +91,9 @@ contents = CSV.open(
 template_letter = File.read('form_letter.erb')
 erb_template = ERB.new(template_letter)
 
+hour_frequencies = Hash.new(0)
+day_frequencies = Hash.new(0)
+
 contents.each do |row|
   id = row[0]
   name = row[:first_name]
@@ -71,9 +102,20 @@ contents.each do |row|
 
   home_phone = clean_phone_number(row[:homephone])
 
+  reg_date = Time.strptime(row[:regdate], "%D %R")
+
+  hour_frequencies[reg_date.hour] += 1
+  day_frequencies[reg_date.to_date.wday] += 1
+
   legislators = legislators_by_zipcode(zipcode)
 
   form_letter = erb_template.result(binding)
 
   save_thank_you_letter(id, form_letter)
 end
+
+peak_hours = peak_times(hour_frequencies)
+puts "Peak hours are #{peak_hours}"
+
+peak_days = convert_to_days(peak_times(day_frequencies))
+puts "Peak days are #{peak_days}"
